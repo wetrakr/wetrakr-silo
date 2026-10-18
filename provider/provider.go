@@ -167,14 +167,18 @@ func (s *Server) authenticatedClient(auth *pluginv1.WatchSyncAuthenticatedContex
 	return client, nil
 }
 
-// window bounds one RPC: requests use the returned context, which ends
-// syncDeadlineMargin before the host's deadline, and no upstream work starts
-// after stopAt.
+// window bounds one RPC: requests use the returned context, which ends a
+// little before the host's deadline, and no further upstream work starts after
+// stopAt. The margin shrinks with the deadline, so an RPC the host gives only
+// a few seconds (a playback stop) still sends its request; callers always run
+// their first unit of work and check stopAt only before the next ones.
 func (s *Server) window(ctx context.Context) (context.Context, context.CancelFunc, time.Time) {
 	now := s.clock()
 	stopAt := now.Add(syncBudget)
 	if deadline, ok := ctx.Deadline(); ok {
-		end := deadline.Add(-syncDeadlineMargin)
+		remaining := deadline.Sub(now)
+		margin := min(syncDeadlineMargin, remaining/5)
+		end := deadline.Add(-margin)
 		if latest := end.Add(-defaultRequestTimeout); latest.Before(stopAt) {
 			stopAt = latest
 		}
@@ -288,7 +292,7 @@ func (s *Server) ApplyEvents(ctx context.Context, req *pluginv1.WatchSyncApplyEv
 	results := make([]*pluginv1.WatchSyncApplyResult, len(events))
 	for start := 0; start < len(events); {
 		end := groupEnd(events, start)
-		if !s.clock().Before(stopAt) {
+		if start > 0 && !s.clock().Before(stopAt) {
 			for index := start; index < len(events); index++ {
 				results[index] = resultFromFault(events[index].GetEventId(), temporaryFault(timeLimitMessage))
 			}

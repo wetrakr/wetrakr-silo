@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	pluginv1 "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginproto/silo/plugin/v1"
 )
@@ -202,4 +203,18 @@ func mustJSON(t *testing.T, value any) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+func TestShortDeadlineStillSendsTheEvent(t *testing.T) {
+	fake, server := newFake(t)
+	fake.handle("POST", "/scrobble/stop", jsonReply(201, map[string]any{"action": "scrobble"}))
+	// Silo gives a playback stop sent through its Jellyfin API five seconds.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stop := movieEvent("s", pluginv1.WatchSyncOperation_WATCH_SYNC_OPERATION_SCROBBLE_STOP, "155")
+	stop.PositionSeconds, stop.DurationSeconds, stop.Completed = 95, 100, true
+	resp, _ := server.ApplyEvents(ctx, &pluginv1.WatchSyncApplyEventsRequest{Context: authContext(), Events: []*pluginv1.WatchSyncEvent{stop}})
+	if resp.GetFault() != nil || resp.GetResults()[0].GetStatus() != applied || len(fake.calls("POST", "/scrobble/stop")) != 1 {
+		t.Fatalf("a stop with a five-second deadline must be sent, got %v", resp)
+	}
 }

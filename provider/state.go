@@ -175,8 +175,8 @@ func (s *Server) ListRemoteState(ctx context.Context, req *pluginv1.WatchSyncLis
 	response := &pluginv1.WatchSyncListRemoteStateResponse{CompleteSnapshot: token.Complete}
 	var warnings warningCounter
 	encodedBytes := 0
-	for token.Step < len(token.Steps) {
-		if !s.clock().Before(stopAt) {
+	for read := 0; token.Step < len(token.Steps); read++ {
+		if read > 0 && !s.clock().Before(stopAt) {
 			// Hand back what we have; the next page resumes where we stopped.
 			break
 		}
