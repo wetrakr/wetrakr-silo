@@ -1,1 +1,124 @@
-{"plugins":[]}
+{
+  "plugins": [
+    {
+      "manifest": {
+        "plugin_id": "com.wetrakr.watchprovider",
+        "version": "0.1.0",
+        "silo_api_version": "v1",
+        "supported_platforms": [
+          {
+            "os": "darwin",
+            "arch": "arm64"
+          },
+          {
+            "os": "linux",
+            "arch": "amd64"
+          },
+          {
+            "os": "linux",
+            "arch": "arm64"
+          }
+        ],
+        "capabilities": [
+          {
+            "type": "watch_sync_provider.v1",
+            "id": "wetrakr",
+            "display_name": "WeTrakr",
+            "description": "Two-way watch history, resume progress, favorites, watchlist, ratings and dropped shows, plus live scrobbling, for WeTrakr accounts.",
+            "watch_sync_provider": {
+              "auth_methods": [
+                3
+              ],
+              "export_watched": true,
+              "export_unwatched": true,
+              "import_watched": true,
+              "import_progress": true,
+              "supported_media_types": [
+                1,
+                2,
+                3
+              ],
+              "external_id_namespaces": [
+                "imdb",
+                "tmdb",
+                "tvdb"
+              ],
+              "max_batch_size": 1000,
+              "import_favorites": true,
+              "export_favorites": true,
+              "remove_favorites": true,
+              "import_watchlist": true,
+              "export_watchlist": true,
+              "remove_watchlist": true,
+              "scrobble_playback": true,
+              "import_ratings": true,
+              "export_ratings": true,
+              "sync_dropped": true,
+              "connection_settings": [
+                {
+                  "key": "log_rewatches",
+                  "label": "Log rewatches",
+                  "description": "Send a new play of a title this WeTrakr account already watched as a rewatch. A play within an hour of one WeTrakr already holds always counts as the same watch.",
+                  "type": 1,
+                  "default_value": true
+                }
+              ]
+            }
+          }
+        ],
+        "global_config_schema": [
+          {
+            "key": "app",
+            "title": "WeTrakr API app",
+            "description": "Optional. The plugin signs in through WeTrakr's own Silo app; fill these in only to use an app of your own or another API host.",
+            "json_schema": "{\"type\":\"object\",\"properties\":{\"client_id\":{\"type\":\"string\"},\"base_url\":{\"type\":\"string\"}},\"additionalProperties\":false}",
+            "admin_form": {
+              "fields": [
+                {
+                  "key": "client_id",
+                  "label": "Client ID",
+                  "description": "Client ID of a WeTrakr API app (wetrakr.com, Settings, API). Leave it empty to use WeTrakr's Silo app. Profiles connected through one app stop working if you change it.",
+                  "control": 1
+                },
+                {
+                  "key": "base_url",
+                  "label": "API URL",
+                  "description": "Leave it empty for https://api.wetrakr.com.",
+                  "control": 1
+                }
+              ],
+              "submit_label": "Save WeTrakr app"
+            }
+          }
+        ],
+        "category": "Watch Providers",
+        "presentation": {
+          "display_name": "WeTrakr",
+          "summary": "Sync Silo watch activity, lists, ratings and dropped shows with WeTrakr, and scrobble what you play.",
+          "description_markdown": "Imports watched movies and episodes, resume progress, favorites, the watchlist (WeTrakr's planning list), movie and show ratings, and dropped shows from WeTrakr. Exports completed plays, unwatched titles, favorites, watchlist changes, ratings and dropped shows, and forwards live playback start, pause and stop events.",
+          "setup_markdown": "Nothing to set up for the server. Each Silo profile connects its own WeTrakr account from its watch-provider settings: Silo shows a code, enter it at [wetrakr.com/activate](https://wetrakr.com/activate) and allow Silo.",
+          "homepage_url": "https://wetrakr.com",
+          "source_url": "https://github.com/wetrakr/wetrakr-silo",
+          "support_url": "https://github.com/wetrakr/wetrakr-silo/issues",
+          "changelog_url": "https://github.com/wetrakr/wetrakr-silo/releases",
+          "publisher_name": "WeTrakr",
+          "publisher_url": "https://wetrakr.com",
+          "license_spdx": "AGPL-3.0-only"
+        }
+      },
+      "repo_url": "https://github.com/wetrakr/wetrakr-silo",
+      "checksums_url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/checksums.txt",
+      "binaries": {
+        "darwin/arm64": {
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-darwin-arm64"
+        },
+        "linux/amd64": {
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-linux-amd64"
+        },
+        "linux/arm64": {
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-linux-arm64"
+        }
+      }
+    }
+  ]
+}
