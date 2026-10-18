@@ -38,6 +38,11 @@ const (
 
 	maxCompactPage = 5000
 
+	// unstampedRereadAfter is how often a section without any activity stamp
+	// is read again, and unstampedPrefix marks such a read in the cursor.
+	unstampedRereadAfter = 6 * time.Hour
+	unstampedPrefix      = "read:"
+
 	// maxProgressPercent keeps a resume point inside the contract's [0, 100)
 	// range.
 	maxProgressPercent = 99.9
@@ -160,7 +165,7 @@ func (s *Server) ListRemoteState(ctx context.Context, req *pluginv1.WatchSyncLis
 		if fault != nil {
 			return &pluginv1.WatchSyncListRemoteStateResponse{Fault: fault}, nil
 		}
-		token = planTraversal(kind, decodeCursor(req.GetCursor()), activities)
+		token = planTraversal(kind, decodeCursor(req.GetCursor()), activities, s.clock())
 	}
 
 	pageSize := int(req.GetPageSize())
@@ -213,6 +218,15 @@ func (s *Server) ListRemoteState(ctx context.Context, req *pluginv1.WatchSyncLis
 	return response, nil
 }
 
+func unstampedFresh(prev string, now time.Time) bool {
+	at, ok := strings.CutPrefix(prev, unstampedPrefix)
+	if !ok {
+		return false
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, at)
+	return err == nil && now.Sub(parsed) < unstampedRereadAfter
+}
+
 func requestedKind(kinds []pluginv1.WatchSyncRemoteStateKind) (pluginv1.WatchSyncRemoteStateKind, *pluginv1.WatchSyncFault) {
 	if len(kinds) != 1 {
 		// Hosts ask for one family per traversal; a cursor only makes sense
@@ -228,22 +242,32 @@ func requestedKind(kinds []pluginv1.WatchSyncRemoteStateKind) (pluginv1.WatchSyn
 // planTraversal decides which lists a traversal reads. A family whose stamps
 // match the cursor reads nothing: an empty, incremental traversal that leaves
 // the host's state as it is.
-func planTraversal(kind pluginv1.WatchSyncRemoteStateKind, previous map[string]string, activities wtActivities) *pageToken {
+//
+// A section that has no stamp at all (the account never favorited anything,
+// or its last playback predates last_playback_at) cannot say whether it
+// moved, so it is read whole at most every unstampedRereadAfter, and the
+// cursor records when.
+func planTraversal(kind pluginv1.WatchSyncRemoteStateKind, previous map[string]string, activities wtActivities, now time.Time) *pageToken {
 	token := &pageToken{Kind: int32(kind), Next: map[string]string{}}
 	changed := map[string]bool{}
 	anyChanged := false
 	for _, name := range familyStamps[kind] {
 		value := stampValue(activities, name)
-		if value != "" {
+		prev := previous[name]
+		switch {
+		case value != "":
 			token.Next[name] = value
-		} else if prev := previous[name]; prev != "" {
+			changed[name] = value != prev
+		case prev != "" && !strings.HasPrefix(prev, unstampedPrefix):
+			// A stamp never goes away; keep the one we saw.
 			token.Next[name] = prev
-		}
-		// A family never read before, or one whose stamp moved, is read.
-		if previous[name] == "" || value != "" && value != previous[name] {
+		case unstampedFresh(prev, now):
+			token.Next[name] = prev
+		default:
+			token.Next[name] = unstampedPrefix + isoTime(now)
 			changed[name] = true
-			anyChanged = true
 		}
+		anyChanged = anyChanged || changed[name]
 	}
 	fresh := len(previous) == 0
 	from := func(name string) string {

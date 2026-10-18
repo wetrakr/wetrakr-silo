@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	pluginv1 "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginproto/silo/plugin/v1"
 )
@@ -201,5 +202,38 @@ func TestRatingConversion(t *testing.T) {
 		if got := toSiloRating(in); got != want {
 			t.Errorf("toSiloRating(%v) = %d, want %d", in, got, want)
 		}
+	}
+}
+
+func TestSectionWithoutStampIsReadAtMostEverySixHours(t *testing.T) {
+	fake, server := newFake(t)
+	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
+	server.now = func() time.Time { return now }
+	server.activities.now = server.now
+	// The account has playback, but last activities has no last_playback_at.
+	fake.handle("GET", "/sync/last_activities", activities(map[string]map[string]string{"movies": {"all": "2026-10-01T00:00:00.000Z"}}))
+	fake.handle("GET", "/sync/tracking/playing/movies", jsonReply(200, []map[string]any{
+		{"type": "movie", "id": 1, "ids": map[string]any{"tmdb": 155}, "status": "paused", "progress_percent": 40},
+	}))
+	fake.handle("GET", "/sync/tracking/playing/episodes", jsonReply(200, []map[string]any{}))
+	kind := pluginv1.WatchSyncRemoteStateKind_WATCH_SYNC_REMOTE_STATE_KIND_PROGRESS
+
+	items, first := traverse(t, server, kind, "")
+	if len(items) != 1 {
+		t.Fatalf("first read items = %v", items)
+	}
+	// An hour later nothing is read again.
+	now = now.Add(time.Hour)
+	server.activities.forget(testToken)
+	_, second := traverse(t, server, kind, first.GetNextCursor())
+	if n := len(fake.calls("GET", "/sync/tracking/playing/movies")); n != 1 {
+		t.Fatalf("read %d times within six hours", n)
+	}
+	// Six hours after the first read it is read again.
+	now = now.Add(6 * time.Hour)
+	server.activities.forget(testToken)
+	traverse(t, server, kind, second.GetNextCursor())
+	if n := len(fake.calls("GET", "/sync/tracking/playing/movies")); n != 2 {
+		t.Fatalf("read %d times, want a re-read after six hours", n)
 	}
 }
