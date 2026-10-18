@@ -1,0 +1,10 @@
+/dist/
+/plugin
+
+# Local agent/tooling state
+/.agents/
+/.claude/
+
+# Local SDK development
+go.work
+go.work.sum
