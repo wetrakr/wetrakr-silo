@@ -3,7 +3,7 @@
     {
       "manifest": {
         "plugin_id": "com.wetrakr.watchprovider",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "silo_api_version": "v1",
         "supported_platforms": [
           {
@@ -107,16 +107,16 @@
         }
       },
       "repo_url": "https://github.com/wetrakr/wetrakr-silo",
-      "checksums_url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/checksums.txt",
+      "checksums_url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.1/checksums.txt",
       "binaries": {
         "darwin/arm64": {
-          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-darwin-arm64"
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.1/plugin-darwin-arm64"
         },
         "linux/amd64": {
-          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-linux-amd64"
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.1/plugin-linux-amd64"
         },
         "linux/arm64": {
-          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.0/plugin-linux-arm64"
+          "url": "https://github.com/wetrakr/wetrakr-silo/releases/download/v0.1.1/plugin-linux-arm64"
         }
       }
     }
