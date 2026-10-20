@@ -22,6 +22,8 @@ Undropping a show, or taking a title off the watchlist, returns it to the state 
 2. Install **WeTrakr** from the catalog. There is nothing to configure on the server.
 3. Each profile opens its watch-provider settings and connects WeTrakr. Silo shows a six-character code: enter it at [wetrakr.com/activate](https://wetrakr.com/activate) and allow Silo.
 
+The plugin works with any Silo server built on `silo-plugin-sdk` v0.25.0 or later. It keeps watch-sync batches at 100 items, the most those builds accept.
+
 The plugin signs in through WeTrakr's own Silo app. An administrator who wants to use an app of their own can enter its client ID in the plugin settings; profiles connected through one app have to reconnect when it changes.
 
 ## How it reads WeTrakr
@@ -33,11 +35,11 @@ It follows WeTrakr's [sync guide](https://api.wetrakr.com/#/sync). Every sync fi
 - The watchlist and dropped shows are read whole whenever they moved, and handed to Silo as complete lists, so a title that left them on WeTrakr leaves them in Silo.
 - Resume progress is read whenever the playing list moved.
 
-Lists come in compact pages of up to 1,000 rows, walked with WeTrakr's cursor. An account that did not change since the last sync costs one request.
+Lists come in compact pages of 100 rows, the batch size Silo asks for, walked with WeTrakr's cursor. An account that did not change since the last sync costs one request.
 
 ## How it writes to WeTrakr
 
-Writes are batched: one request per kind of change, up to 1,000 items. Each carries an `Idempotency-Key`, so a retried batch is replayed by WeTrakr instead of written twice.
+Writes are batched: one request per kind of change, up to 100 items. Each carries an `Idempotency-Key`, so a retried batch is replayed by WeTrakr instead of written twice.
 
 - **Plays.** With **Log rewatches** on (the default), a play of a title the account already watched is logged as a rewatch. A play within an hour of one WeTrakr already holds counts as the same watch, which is what keeps a play scrobbled live and then exported by Silo from being logged twice. With it off, titles already watched are left alone.
 - **Episodes** are sent by their own IMDb, TMDB or TVDB id, or by their show's id with season and episode numbers.
