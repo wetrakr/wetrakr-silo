@@ -99,7 +99,7 @@ func TestDeviceFlow(t *testing.T) {
 	start, _ := server.DeviceAuthorization().Start(context.Background(), &pluginv1.WatchSyncDeviceAuthorizationServiceStartRequest{
 		CapabilityId: capabilityID, ProviderConfig: auth.GetProviderConfig(),
 	})
-	if start.GetFault() != nil || start.GetUserCode() != "K7PX4M" || start.GetVerificationUrlComplete() != "https://wetrakr.com/activate?code=K7PX4M" {
+	if start.GetFault() != nil || start.GetUserCode() != "K7PX4M" || start.GetVerificationUrlComplete() != "https://wetrakr.com/activate?code=K7PX4M&platform=silo" {
 		t.Fatalf("start = %v", start)
 	}
 	if body := fake.calls("POST", "/oauth/device/code")[0].body; body["client_id"] != "client-123" {

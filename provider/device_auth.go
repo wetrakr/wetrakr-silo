@@ -72,12 +72,13 @@ func (d *deviceAuthorization) Start(ctx context.Context, req *pluginv1.WatchSync
 
 // verificationURLComplete is the activation page with the code filled in,
 // which WeTrakr accepts as ?code=, so a QR code takes the user straight there.
+// platform=silo makes the page show the Silo logo next to WeTrakr's.
 func verificationURLComplete(verificationURL, userCode string) string {
 	separator := "?"
 	if strings.Contains(verificationURL, "?") {
 		separator = "&"
 	}
-	return verificationURL + separator + "code=" + userCode
+	return verificationURL + separator + "code=" + userCode + "&platform=silo"
 }
 
 // Poll asks WeTrakr whether the user approved the code. WeTrakr answers a
